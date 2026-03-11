@@ -8,7 +8,11 @@ end
 
 # ハミルトニアンの非対角要素 f(k) = Σ_j exp(i k・d_j) を計算する。
 function f(k, dvecs::NTuple{3,Vec2}=NN_VECTORS)::ComplexF64
-    throw(ErrorException("TODO(student): implement f(k, dvecs) in src/tb.jl"))
+    sum = 0.0 + 0.0im
+    for j in 1:3
+        sum += exp(1im * complex(dot(k, dvecs[j])))
+    end
+    return sum
 end
 
 # 勾配 ∂f/∂k を計算する。
@@ -23,7 +27,10 @@ end
 # 非対角成分 -t f(k) が最近接ホッピングに対応する。
 # 2x2 行列を SMatrix で返す。
 function H(k, p::TBParams)::CMat2S
-    throw(ErrorException("TODO(student): implement H(k, p) in src/tb.jl"))
+    return @SMatrix [
+        p.Δ -p.t*f(k)
+        -p.t*conj(f(k)) -p.Δ
+    ]
 end
 
 # ハミルトニアンの波数微分 dH/dk_x, dH/dk_y を返す。
