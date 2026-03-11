@@ -1,5 +1,6 @@
 using LinearAlgebra
 using Test
+using GrapheneHHG
 
 @testset "GKSL properties" begin
     Nk = 4
@@ -15,12 +16,19 @@ using Test
     rhs!(dρ, ρ, p, 0.0)
 
     for i in eachindex(dρ)
-        # ここを実装（トレース保存・エルミート性）
-        throw(ErrorException("TODO(student): add trace/Hermitian tests in test/test_gksl.jl"))
+        # トレースの保存を検証
+        @test tr(dρ[i]) ≈ 0.0 atol = 1e-12
+        # Hermite対称性を検証
+        @test dρ[i] ≈ dρ[i]'
     end
 
     for LdL in cache.LdL
-        # ここを実装（L^\dagger Lは射影演算子？）
-        throw(ErrorException("TODO(student): add projector tests in test/test_gksl.jl"))
+        # L^\dagger Lが射影演算子であることを検証
+        # Hermite対称性を検証
+        @test LdL ≈ LdL'
+        # トレースが1であることを検証
+        @test tr(LdL) ≈ 1.0
+        # 冪等性を検証
+        @test LdL * LdL ≈ LdL
     end
 end

@@ -9,8 +9,8 @@ end
 # ハミルトニアンの非対角要素 f(k) = Σ_j exp(i k・d_j) を計算する。
 function f(k, dvecs::NTuple{3,Vec2}=NN_VECTORS)::ComplexF64
     sum = 0.0 + 0.0im
-    for j in 1:3
-        sum += exp(1im * complex(dot(k, dvecs[j])))
+    for d in dvecs
+        sum += cis(dot(k, d))
     end
     return sum
 end
@@ -20,12 +20,13 @@ end
 # x, y 成分をまとめた 2 成分ベクトルで返す。
 function dfdk(k, dvecs::NTuple{3,Vec2}=NN_VECTORS)::SVector{2,ComplexF64}
     dfdk_x = 0 + 0im
-    dfdk_x = 0 + 0im
-    for j in 1:3
-        dfdk_x += dvecs[j, 1] * exp(1im * complex(dot(k, dvecs[j])))
-        dfdk_x += dvecs[j, 2] * exp(1im * complex(dot(k, dvecs[j])))
+    dfdk_y = 0 + 0im
+    for d in dvecs
+        phase = cis(dot(k, d))
+        dfdk_x += d[1] * phase
+        dfdk_y += d[2] * phase
     end
-    return @SVector [1im * dfdk_x, 1im * dfdk_x]
+    return @SVector [1im * dfdk_x, 1im * dfdk_y]
 end
 
 # 2 バンド TB ハミルトニアン H(k) を組み立てる。
@@ -42,8 +43,14 @@ end
 # ハミルトニアンの波数微分 dH/dk_x, dH/dk_y を返す。
 # 2x2 行列を SMatrix の Tuple で返す。
 function dHdk(k, p::TBParams)::Tuple{CMat2S,CMat2S}
-    return @SMatrix [
-        0 -p.t*dfdk(k, p.dvecs)
-        -p.t*conj(dfdk(k, p.dvecs)) 0
+    dfdk_ = dfdk(k, p.dvecs)
+    dHdk_x = @SMatrix ComplexF64[
+        0.0 -p.t*dfdk_[1]
+        -p.t*conj(dfdk_[1]) 0.0
     ]
+    dHdk_y = @SMatrix ComplexF64[
+        0.0 -p.t*dfdk_[2]
+        -p.t*conj(dfdk_[2]) 0.0
+    ]
+    return dHdk_x, dHdk_y
 end
