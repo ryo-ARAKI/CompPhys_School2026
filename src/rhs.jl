@@ -23,7 +23,8 @@ function commutator!(
     Hk::AbstractMatrix{<:Complex},
     ρk::AbstractMatrix{<:Complex},
 )::Nothing
-    throw(ErrorException("TODO(student): implement commutator! in src/rhs.jl"))
+    dρ .= -im .* (Hk * ρk - ρk * Hk)
+    return nothing
 end
 
 # GKSL の散逸項 γ(LρL^† - 1/2 {L^†L, ρ}) を dρ に加える。
@@ -36,7 +37,8 @@ function dissipator!(
     LdLk::AbstractMatrix{<:Complex},
     γ,
 )::Nothing
-    throw(ErrorException("TODO(student): implement dissipator! in src/rhs.jl"))
+    dρ .+= γ .* (Lk * ρk * adjoint(Lk) .- 0.5 .* (LdLk * ρk + ρk * LdLk))
+    return nothing
 end
 
 # 各 k 点について GKSL 方程式の右辺 dρ/dt をまとめて計算する。
@@ -48,5 +50,13 @@ function rhs!(
     p::RHSParams,
     t::Float64,
 )::Nothing
-    throw(ErrorException("TODO(student): implement rhs! in src/rhs.jl"))
+    At = A(t, p.pulse)
+
+    @inbounds for i in eachindex(ρ)
+        k_shift = p.kgrid[i] + At
+        Hk = H(k_shift, p.tb)
+        commutator!(dρ[i], Hk, ρ[i])
+        dissipator!(dρ[i], ρ[i], p.lindblad.L[i], p.lindblad.LdL[i], p.γ)
+    end
+    return nothing
 end

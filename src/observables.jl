@@ -3,11 +3,7 @@
 function _current_component(
     ρk::AbstractMatrix{<:Complex}, dHdk::AbstractMatrix{<:Complex}
 )::Float64
-    throw(
-        ErrorException(
-            "TODO(student): implement _current_component(ρk, dHdk) in src/observables.jl",
-        ),
-    )
+    return real(tr(ρk * dHdk))
 end
 
 # k 点ごとの状態配列と dH/dk 配列の長さがそろっているか確認する。
@@ -29,7 +25,15 @@ end
 function current_traces(
     ρ::AbstractVector{<:AbstractMatrix{<:Complex}}, dHdk::NamedTuple{(:x, :y)}
 )
-    throw(ErrorException("TODO(student): implement current_traces(ρ, dHdk) in src/observables.jl"))
+    _validate_current_inputs(ρ, dHdk.x, dHdk.y)
+
+    Jx = 0.0
+    Jy = 0.0
+    @inbounds for i in eachindex(ρ)
+        Jx += _current_component(ρ[i], dHdk.x[i])
+        Jy += _current_component(ρ[i], dHdk.y[i])
+    end
+    return (x=Jx / length(ρ), y=Jy / length(ρ))
 end
 
 # 各 k 点で dH/dk_x, dH/dk_y をまとめて前計算する。
